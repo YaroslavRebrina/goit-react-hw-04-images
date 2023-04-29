@@ -31,7 +31,6 @@ export const ImageGallery = () => {
       setShowButton(page < Math.ceil(response.data.totalHits / per_page));
       setLoading(false);
     };
-    setLoading(true);
 
     try {
       fetchImgs(query, page);
@@ -45,7 +44,7 @@ export const ImageGallery = () => {
   const handlerInputChange = input => {
     setQuery(input);
     setCollection([]);
-    setLoading(false);
+    setLoading(true);
     setPage(1);
   };
 
