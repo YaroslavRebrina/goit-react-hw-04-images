@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { per_page, AUTH__KEY } from 'servises/api';
+import { fetchImgs, per_page } from 'servises/api';
 import { SearchBar } from './Searchbar';
 import { Loader } from './Loader';
 import { ImageGalleryItem } from './ImageGalleryItem';
 import { Button } from './Button';
-import axios from 'axios';
 
 import css from './ImageGallery.module.css';
 
@@ -21,24 +20,14 @@ export const ImageGallery = () => {
       return;
     }
 
-    const fetchImgs = async (query, page) => {
-      const response = await axios.get(
-        `/?q=${query}&page=1&key=${AUTH__KEY}&image_type=photo&orientation=horizontal&page=${page}&per_page=${per_page}`
-      );
-
-      const imgCollection = response.data.hits;
-      setCollection(prevState => [...prevState, ...imgCollection]);
-      setShowButton(page < Math.ceil(response.data.totalHits / per_page));
-      setLoading(false);
-    };
-
-    try {
-      fetchImgs(query, page);
-    } catch (error) {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+    fetchImgs(query, page)
+      .then(response => {
+        const imgCollection = response.data.hits;
+        setCollection(prevState => [...prevState, ...imgCollection]);
+        setShowButton(page < Math.ceil(response.data.totalHits / per_page));
+      })
+      .catch(error => setError(true))
+      .finally(setLoading(false));
   }, [query, page]);
 
   const handlerInputChange = input => {
