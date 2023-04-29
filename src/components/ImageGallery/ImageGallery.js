@@ -1,90 +1,87 @@
-import React, { Component } from 'react';
-import { fetchImgs, per_page } from 'servises/api';
+import React, { useEffect, useState } from 'react';
+import { per_page, AUTH__KEY } from 'servises/api';
 import { SearchBar } from './Searchbar';
 import { Loader } from './Loader';
 import { ImageGalleryItem } from './ImageGalleryItem';
 import { Button } from './Button';
+import axios from 'axios';
 
 import css from './ImageGallery.module.css';
 
-export class ImageGallery extends Component {
-  state = {
-    query: '',
-    collection: [],
-    isLoading: false,
-    error: false,
-    page: 1,
-    isShowButton: false,
-  };
+export const ImageGallery = () => {
+  const [query, setQuery] = useState('');
+  const [collection, setCollection] = useState([]);
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
+  const [isShowButton, setShowButton] = useState(false);
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      this.state.query !== prevState.query ||
-      this.state.page !== prevState.page
-    ) {
-      this.setState({ isLoading: true });
-
-      try {
-        const { query, page } = this.state;
-        const response = await fetchImgs(query, page);
-        const imgCollection = response.data.hits;
-        console.log(response);
-        this.setState(prevState => {
-          return {
-            collection: [...prevState.collection, ...imgCollection],
-            isLoading: false,
-            isShowButton: page < Math.ceil(response.data.totalHits / per_page),
-          };
-        });
-      } catch (error) {
-        this.setState({ error: true });
-      } finally {
-        this.setState({ isLoading: false });
-      }
+  useEffect(() => {
+    if (query === '') {
+      return;
     }
-  }
 
-  handlerInputChange = input => {
-    this.setState({ query: input, collection: [], isLoading: false, page: 1 });
+    const fetchImgs = async (query, page) => {
+      const response = await axios.get(
+        `/?q=${query}&page=1&key=${AUTH__KEY}&image_type=photo&orientation=horizontal&page=${page}&per_page=${per_page}`
+      );
+
+      const imgCollection = response.data.hits;
+      setCollection(prevState => [...prevState, ...imgCollection]);
+      setShowButton(page < Math.ceil(response.data.totalHits / per_page));
+      setLoading(false);
+    };
+    setLoading(true);
+
+    try {
+      fetchImgs(query, page);
+    } catch (error) {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [query, page]);
+
+  const handlerInputChange = input => {
+    setQuery(input);
+    setCollection([]);
+    setLoading(false);
+    setPage(1);
   };
 
-  handlerPaginationButtonClick = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const handlerPaginationButtonClick = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  render() {
-    const { collection, isLoading, error, isShowButton } = this.state;
+  return (
+    <>
+      <SearchBar getQuery={handlerInputChange} />
+      {error && <p>Что-то не так, попробуйте ещё раз...</p>}
+      {isLoading && <Loader />}
 
-    return (
-      <>
-        <SearchBar getQuery={this.handlerInputChange} />
-        {error && <p>Что-то не так, попробуйте ещё раз...</p>}
-        {isLoading && <Loader />}
-
-        {collection.length > 0 && (
-          <>
-            <ul className={css.ImageGallery}>
-              {collection.map(item => (
-                <ImageGalleryItem
-                  key={item.id}
-                  src={item.webformatURL}
-                  largeVerion={item.largeImageURL}
-                />
-              ))}
-            </ul>
-            {isLoading ? (
-              <Loader />
-            ) : (
-              isShowButton && (
-                <Button
-                  disabled={isLoading}
-                  onClick={this.handlerPaginationButtonClick}
-                />
-              )
-            )}
-          </>
-        )}
-      </>
-    );
-  }
-}
+      {collection.length > 0 && (
+        <>
+          <ul className={css.ImageGallery}>
+            {collection.map(item => (
+              <ImageGalleryItem
+                key={item.id}
+                src={item.webformatURL}
+                largeVerion={item.largeImageURL}
+              />
+            ))}
+          </ul>
+          {isLoading ? (
+            <Loader />
+          ) : (
+            isShowButton && (
+              <Button
+                disabled={isLoading}
+                onClick={handlerPaginationButtonClick}
+              />
+            )
+          )}
+        </>
+      )}
+    </>
+  );
+};

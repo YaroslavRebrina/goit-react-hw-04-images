@@ -1,34 +1,27 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import css from './ImageGalleryItem.module.css';
 import { Modal } from './Modal';
 import PropTypes from 'prop-types';
 
-export class ImageGalleryItem extends Component {
-  state = {
-    isOpened: false,
+export const ImageGalleryItem = ({ src, alt, largeVerion }) => {
+  const [isOpened, setOpened] = useState(false);
+
+  const handlerOnClick = () => {
+    setOpened(!isOpened);
   };
 
-  handlerOnClick = () => {
-    this.setState(prevState => ({ isOpened: !prevState.isOpened }));
-  };
-
-  render() {
-    const { src, alt, largeVerion } = this.props;
-    return (
-      <li className={css.ImageGalleryItem}>
-        <img
-          onClick={this.handlerOnClick}
-          className={css.ImageGalleryItemImg}
-          src={src}
-          alt={alt}
-        />
-        {this.state.isOpened && (
-          <Modal largeVerion={largeVerion} onClick={this.handlerOnClick} />
-        )}
-      </li>
-    );
-  }
-}
+  return (
+    <li className={css.ImageGalleryItem}>
+      <img
+        onClick={handlerOnClick}
+        className={css.ImageGalleryItemImg}
+        src={src}
+        alt={alt}
+      />
+      {isOpened && <Modal largeVerion={largeVerion} onClick={handlerOnClick} />}
+    </li>
+  );
+};
 
 ImageGalleryItem.propTypes = {
   query: PropTypes.string,
